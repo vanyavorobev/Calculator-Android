@@ -8,7 +8,8 @@ sealed class MainActivityState {
 
 	data class Content(
 		val atomList: MutableList<AtomOfExpression> = mutableListOf(),
-		var expression: String = ""
+		var expression: String = "",
+		var result: String = ""
 		): MainActivityState()
 
 }

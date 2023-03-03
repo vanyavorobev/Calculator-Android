@@ -1,34 +1,35 @@
 package ru.vanyavvorobev.app.domain
 
-enum class MathToken(val value: String, val type: TokenType) {
-	EMPTY				(value = "", type = TokenType.Empty),
+enum class MathToken(val value: String, val type: TokenType, val priority: Int) {
+	EMPTY				(value = "", type = TokenType.Empty, priority = 0),
 
 
-	ZERO				(value = "0", type = TokenType.Int),
-	ONE					(value = "1", type = TokenType.Int),
-	TWO					(value = "2", type = TokenType.Int),
-	THREE				(value = "3", type = TokenType.Int),
-	FOUR				(value = "4", type = TokenType.Int),
-	FIVE				(value = "5", type = TokenType.Int),
-	SIX					(value = "6", type = TokenType.Int),
-	SEVEN				(value = "7", type = TokenType.Int),
-	EIGHT				(value = "8", type = TokenType.Int),
-	NINE				(value = "9", type = TokenType.Int),
+	ZERO				(value = "0", type = TokenType.Int, priority = 0),
+	ONE					(value = "1", type = TokenType.Int, priority = 0),
+	TWO					(value = "2", type = TokenType.Int, priority = 0),
+	THREE				(value = "3", type = TokenType.Int, priority = 0),
+	FOUR				(value = "4", type = TokenType.Int, priority = 0),
+	FIVE				(value = "5", type = TokenType.Int, priority = 0),
+	SIX					(value = "6", type = TokenType.Int, priority = 0),
+	SEVEN				(value = "7", type = TokenType.Int, priority = 0),
+	EIGHT				(value = "8", type = TokenType.Int, priority = 0),
+	NINE				(value = "9", type = TokenType.Int, priority = 0),
 
-	POINT				(value = ",", type = TokenType.Point),
+	POINT				(value = ",", type = TokenType.Point, priority = 0),
 
-	IU_MINUS			(value = "-", type = TokenType.InfixUnaryOperation),
-	PU_MINUS			(value = "* (-1)", type = TokenType.PostfixUnaryOperation),
-	PERCENT				(value = "* (0,01)", type = TokenType.PostfixUnaryOperation),
+	PF_MINUS			(value = "-", type = TokenType.PrefixFunction, priority = 0),
 
-	PLUS				(value = "+", type = TokenType.PostfixBinaryOperation),
-	B_MINUS				(value = "-", type = TokenType.PostfixBinaryOperation),
-	MULTIPLY			(value = "*", type = TokenType.PostfixBinaryOperation),
-	DIVIDE				(value = "/", type = TokenType.PostfixBinaryOperation),
+	P_MINUS				(value = "* -1", type = TokenType.PostfixFunction, priority = 0),
+	PERCENT				(value = "* 0,01", type = TokenType.PostfixFunction, priority = 0),
 
-	RESULT				(value = "", type = TokenType.Empty),
-	AC					(value = "", type = TokenType.Empty),
-	BACKSPACE			(value = "", type = TokenType.Empty)
+	PLUS				(value = "+", type = TokenType.PostfixBinaryOperation, priority = 1),
+	B_MINUS				(value = "-", type = TokenType.PostfixBinaryOperation, priority = 1),
+	MULTIPLY			(value = "*", type = TokenType.PostfixBinaryOperation, priority = 2),
+	DIVIDE				(value = "/", type = TokenType.PostfixBinaryOperation, priority = 2),
+
+	RESULT				(value = "", type = TokenType.Empty, priority = 0),
+	AC					(value = "", type = TokenType.Empty, priority = 0),
+	BACKSPACE			(value = "", type = TokenType.Empty, priority = 0)
 }
 
 enum class TokenType {
@@ -36,10 +37,11 @@ enum class TokenType {
 	Int,
 	Double,
 	Point,
-	InfixUnaryOperation,
-	InfixBinaryOperation,
-	PostfixUnaryOperation,
+
 	PostfixBinaryOperation,
+
+	PrefixFunction,
+	PostfixFunction,
 
 	OpenBracket,
 	CloseBracket

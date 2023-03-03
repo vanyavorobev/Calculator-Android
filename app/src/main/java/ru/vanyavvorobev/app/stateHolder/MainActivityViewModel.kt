@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import ru.vanyavvorobev.app.domain.AtomOfExpression
+import ru.vanyavvorobev.app.domain.MathExecutor
 import ru.vanyavvorobev.app.domain.MathToken
 import ru.vanyavvorobev.app.domain.TokenType
 
@@ -11,15 +12,14 @@ class MainActivityViewModel: ViewModel() {
 
 	private val _state: MutableLiveData<MainActivityState> = MutableLiveData(MainActivityState.Initial)
 	val state: LiveData<MainActivityState> = _state
-	private val _errorState: MutableLiveData<MainActivityErrorState> = MutableLiveData(MainActivityErrorState.Initial)
-	val errorState: LiveData<MainActivityErrorState> = _errorState
 
+	private val executor: MathExecutor = MathExecutor()
 	private var expressionState: Int = 0
 
 	companion object {
 
 		private val EMPTY_STATE = MainActivityState.Content(
-			atomList = mutableListOf(AtomOfExpression("", TokenType.Empty)),
+			atomList = mutableListOf(AtomOfExpression("", TokenType.Empty, 0)),
 			expression = ""
 		)
 
@@ -30,31 +30,35 @@ class MainActivityViewModel: ViewModel() {
 		expressionState = 0
 	}
 
+
+	// это конечный автомат, который запрещает вводить некорректные последовательности
+	// здесь не отлавливаются арифметические ошибки, типа, деления на 0
+	// также в нем происходит перевод в токены, через которые удобно работать
+	// операнд, скобка, функция и операция являются одним токеном
 	fun handleToken(inToken: MathToken) {
 		val currentState = _state.value as? MainActivityState.Content ?: return
-		val lastAtom = if(currentState.atomList.isEmpty()) AtomOfExpression("", TokenType.Empty) else currentState.atomList.last()
+		val lastAtom = if(currentState.atomList.isEmpty()) AtomOfExpression("", TokenType.Empty, 0) else currentState.atomList.last()
 
-		val token = if(inToken == MathToken.B_MINUS && expressionState == 0) MathToken.IU_MINUS else inToken
+		val token = if(inToken == MathToken.B_MINUS && expressionState == 0) MathToken.PF_MINUS else inToken
+
+		if(token == MathToken.RESULT) {
+			executor.execute(currentState.atomList)
+		}
 
 		when(expressionState) {
 			0 		-> {
 				when(token.type) {
-					TokenType.Int 						-> {
+					TokenType.Int                  -> {
 						expressionState = 1
 						currentState.expression += token.value
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
-					TokenType.InfixUnaryOperation 		-> { //todo
+					TokenType.PrefixFunction  -> { //todo
 						expressionState = 0
 						currentState.expression += token.value
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
-					TokenType.InfixBinaryOperation 		-> { //todo
-						expressionState = 0
-						currentState.expression += token.value
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
-					}
-					else 								-> {}
+					else                            -> {}
 				}
 			}
 			1 		-> {
@@ -67,18 +71,18 @@ class MainActivityViewModel: ViewModel() {
 					TokenType.Point 					-> {
 						expressionState = 2
 						currentState.expression += token.value
-						lastAtom.value = token.value
+						lastAtom.value += token.value
 						lastAtom.type = token.type
 					}
-					TokenType.PostfixUnaryOperation 	-> {
+					TokenType.PostfixFunction 	-> {
 						expressionState = 4
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					TokenType.PostfixBinaryOperation 	-> {
 						expressionState = 0
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					else 								-> {}
 				}
@@ -88,7 +92,7 @@ class MainActivityViewModel: ViewModel() {
 					TokenType.Int 						-> {
 						expressionState = 3
 						currentState.expression += token.value
-						lastAtom.value = token.value
+						lastAtom.value += token.value
 						lastAtom.type = token.type
 					}
 					else 								-> {}
@@ -99,18 +103,18 @@ class MainActivityViewModel: ViewModel() {
 					TokenType.Int 						-> {
 						expressionState = 3
 						currentState.expression += token.value
-						lastAtom.value = token.value
+						lastAtom.value += token.value
 						lastAtom.type = token.type
 					}
 					TokenType.PostfixBinaryOperation 	-> {
 						expressionState = 0
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
-					TokenType.PostfixUnaryOperation 	-> {
+					TokenType.PostfixFunction 	-> {
 						expressionState = 4
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					else 								-> {}
 				}
@@ -120,12 +124,12 @@ class MainActivityViewModel: ViewModel() {
 					TokenType.PostfixBinaryOperation	-> {
 						expressionState = 0
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
-					TokenType.PostfixUnaryOperation 	-> {
+					TokenType.PostfixFunction 	-> {
 						expressionState = 4
 						currentState.expression += " ${token.value} "
-						currentState.atomList.add(AtomOfExpression(token.value, token.type))
+						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					else								-> {}
 				}
@@ -137,6 +141,8 @@ class MainActivityViewModel: ViewModel() {
 
 		_state.value = currentState.copy()
 	}
+
+
 
 
 }

@@ -104,7 +104,7 @@ fun MainActivityCompose(viewModel: MainActivityViewModel, context: LifecycleOwne
 		)
 		Row {
 			CreateButton(onClick = { handleToken(MathToken.AC) }, text = "AC", color = accent, weight = 1f)
-			CreateButton(onClick = { handleToken(MathToken.PU_MINUS) }, text = "±", color = accent, weight = 1f)
+			CreateButton(onClick = { handleToken(MathToken.P_MINUS) }, text = "±", color = accent, weight = 1f)
 			CreateButton(onClick = { handleToken(MathToken.PERCENT) }, text = "%", color = accent, weight = 1f)
 			CreateButton(onClick = { handleToken(MathToken.DIVIDE) }, text = "/", color = secondary, weight = 1f)
 		}
