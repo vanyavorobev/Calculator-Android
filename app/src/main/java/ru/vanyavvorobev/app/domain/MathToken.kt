@@ -20,7 +20,7 @@ enum class MathToken(val value: String, val type: TokenType, val priority: Int) 
 	PF_MINUS			(value = "-", type = TokenType.PrefixFunction, priority = 0),
 
 	P_MINUS				(value = "* -1", type = TokenType.PostfixFunction, priority = 0),
-	PERCENT				(value = "* 0,01", type = TokenType.PostfixFunction, priority = 0),
+	PERCENT				(value = "* 0.01", type = TokenType.PostfixFunction, priority = 0),
 
 	PLUS				(value = "+", type = TokenType.PostfixBinaryOperation, priority = 1),
 	B_MINUS				(value = "-", type = TokenType.PostfixBinaryOperation, priority = 1),
