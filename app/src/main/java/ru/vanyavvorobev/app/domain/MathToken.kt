@@ -15,7 +15,7 @@ enum class MathToken(val value: String, val type: TokenType, val priority: Int) 
 	EIGHT				(value = "8", type = TokenType.Int, priority = 0),
 	NINE				(value = "9", type = TokenType.Int, priority = 0),
 
-	POINT				(value = ",", type = TokenType.Point, priority = 0),
+	POINT				(value = ".", type = TokenType.Point, priority = 0),
 
 	PF_MINUS			(value = "-", type = TokenType.PrefixFunction, priority = 0),
 

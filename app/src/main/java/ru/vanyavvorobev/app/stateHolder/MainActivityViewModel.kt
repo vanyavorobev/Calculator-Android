@@ -3,6 +3,8 @@ package ru.vanyavvorobev.app.stateHolder
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import ru.vanyavvorobev.app.domain.AtomOfExpression
 import ru.vanyavvorobev.app.domain.MathExecutor
 import ru.vanyavvorobev.app.domain.MathToken
@@ -10,8 +12,8 @@ import ru.vanyavvorobev.app.domain.TokenType
 
 class MainActivityViewModel: ViewModel() {
 
-	private val _state: MutableLiveData<MainActivityState> = MutableLiveData(MainActivityState.Initial)
-	val state: LiveData<MainActivityState> = _state
+	private val mState: MutableStateFlow<MainActivityState> = MutableStateFlow(MainActivityState.Initial)
+	val state: StateFlow<MainActivityState> = mState
 
 	private val executor: MathExecutor = MathExecutor()
 	private var expressionState: Int = 0
@@ -26,7 +28,7 @@ class MainActivityViewModel: ViewModel() {
 	}
 
 	fun initState() {
-		_state.value = EMPTY_STATE.copy()
+		mState.value = EMPTY_STATE.copy()
 		expressionState = 0
 	}
 
@@ -36,13 +38,22 @@ class MainActivityViewModel: ViewModel() {
 	// также в нем происходит перевод в токены, через которые удобно работать
 	// операнд, скобка, функция и операция являются одним токеном
 	fun handleToken(inToken: MathToken) {
-		val currentState = _state.value as? MainActivityState.Content ?: return
+		val currentState = EMPTY_STATE
+		if(mState.value !is MainActivityState.Content) { throw java.lang.IllegalStateException() }
+		else {
+			currentState.atomList = (mState.value as MainActivityState.Content).atomList
+			currentState.expression = (mState.value as MainActivityState.Content).expression
+		}
 		val lastAtom = if(currentState.atomList.isEmpty()) AtomOfExpression("", TokenType.Empty, 0) else currentState.atomList.last()
 
 		val token = if(inToken == MathToken.B_MINUS && expressionState == 0) MathToken.PF_MINUS else inToken
 
 		if(token == MathToken.RESULT) {
-			executor.execute(currentState.atomList)
+			val ans = executor.execute(currentState.atomList)
+			currentState.result = ans.value
+			expressionState = 0
+			mState.value = currentState.copy(atomList = mutableListOf(), expression = "")
+			return
 		}
 
 		when(expressionState) {
@@ -53,7 +64,7 @@ class MainActivityViewModel: ViewModel() {
 						currentState.expression += token.value
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
-					TokenType.PrefixFunction  -> { //todo
+					TokenType.PrefixFunction  -> {
 						expressionState = 0
 						currentState.expression += token.value
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
@@ -75,7 +86,7 @@ class MainActivityViewModel: ViewModel() {
 						lastAtom.type = token.type
 					}
 					TokenType.PostfixFunction 	-> {
-						expressionState = 4
+						expressionState = 1
 						currentState.expression += " ${token.value} "
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
@@ -93,7 +104,7 @@ class MainActivityViewModel: ViewModel() {
 						expressionState = 3
 						currentState.expression += token.value
 						lastAtom.value += token.value
-						lastAtom.type = token.type
+						lastAtom.type = TokenType.Double
 					}
 					else 								-> {}
 				}
@@ -112,7 +123,7 @@ class MainActivityViewModel: ViewModel() {
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					TokenType.PostfixFunction 	-> {
-						expressionState = 4
+						expressionState = 1
 						currentState.expression += " ${token.value} "
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
@@ -127,7 +138,7 @@ class MainActivityViewModel: ViewModel() {
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
 					TokenType.PostfixFunction 	-> {
-						expressionState = 4
+						expressionState = 1
 						currentState.expression += " ${token.value} "
 						currentState.atomList.add(AtomOfExpression(token.value, token.type, token.priority))
 					}
@@ -139,7 +150,7 @@ class MainActivityViewModel: ViewModel() {
 			}
 		}
 
-		_state.value = currentState.copy()
+		mState.value = currentState.copy()
 	}
 
 
